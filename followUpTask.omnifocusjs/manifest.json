@@ -1,0 +1,15 @@
+{
+  "defaultLocale": "en",
+  "identifier": "com.KaitlinSalzke.followUpTask",
+  "author": "Kaitlin Salzke",
+  "description": "An OmniFocus plug-in to sort tags.",
+  "version": "1.0.0",
+  "actions": [
+    {
+      "identifier": "addFollowUpTask",
+      "image": "plus.app"
+    }
+  ],
+  "libraries": [
+  ]
+}
