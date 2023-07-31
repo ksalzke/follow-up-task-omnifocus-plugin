@@ -2,7 +2,7 @@
   "defaultLocale": "en",
   "identifier": "com.KaitlinSalzke.followUpTask",
   "author": "Kaitlin Salzke",
-  "description": "An OmniFocus plug-in to sort tags.",
+  "description": "An OmniFocus plug-in to add follow up tasks.",
   "version": "1.0.0",
   "actions": [
     {
