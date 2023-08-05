@@ -115,6 +115,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         newTaskDetails.dueDate = editForm.values.dueDate;
                         newTaskDetails.note = editForm.values.notes;
                         newTask = new Task(form.values.taskName, selectedTask.before);
+                        //save()
+                        newTask.clearTags();
                         newTask.note = newTaskDetails.note;
                         newTask.addTags(newTaskDetails.tags);
                         newTask.flagged = newTaskDetails.flagged;

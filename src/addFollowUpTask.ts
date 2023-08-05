@@ -137,6 +137,8 @@ interface ActionGroupLib extends PlugIn.Library {
     // create basic task details
 
     const newTask: Task = new Task(form.values.taskName, selectedTask.before)
+    //save()
+    newTask.clearTags()
     newTask.note = newTaskDetails.note
     newTask.addTags(newTaskDetails.tags)
     newTask.flagged = newTaskDetails.flagged
