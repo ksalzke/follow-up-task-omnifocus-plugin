@@ -156,7 +156,7 @@ var _this = this;
                     return [3 /*break*/, 10];
                 case 14:
                     // complete original task
-                    task.markComplete();
+                    task.markComplete(null);
                     if (!(form.values.move || editForm.values.move)) return [3 /*break*/, 17];
                     return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
                 case 15:

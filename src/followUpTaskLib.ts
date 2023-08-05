@@ -164,7 +164,7 @@ interface ActionGroupLib extends PlugIn.Library {
         }
 
         // complete original task
-        task.markComplete()
+        task.markComplete(null)
 
 
         // move the task if specified
