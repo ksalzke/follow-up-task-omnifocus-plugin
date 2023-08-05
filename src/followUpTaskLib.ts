@@ -141,7 +141,7 @@ interface ActionGroupLib extends PlugIn.Library {
 
         // create basic task details
 
-        const newTask: Task = new Task(form.values.taskName, task.before)
+        const newTask: Task = new Task(form.values.taskName, task.after)
         //save()
         newTask.clearTags()
         newTask.note = newTaskDetails.note
@@ -162,10 +162,6 @@ interface ActionGroupLib extends PlugIn.Library {
                 await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)
             }
         }
-
-        // complete original task
-        task.markComplete(null)
-
 
         // move the task if specified
         if (form.values.move || editForm.values.move) {

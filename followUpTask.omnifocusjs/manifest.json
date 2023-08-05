@@ -6,8 +6,16 @@
   "version": "1.0.0",
   "actions": [
     {
-      "identifier": "addFollowUpTask",
-      "image": "plus.app"
+      "identifier": "completeAndAdd",
+      "image": "checkmark.circle.fill"
+    },
+    {
+      "identifier": "dropAndAdd",
+      "image": "minus.circle.fill"
+    },
+    {
+      "identifier": "addFollowUp",
+      "image": "plus.circle.fill"
     }
   ],
   "libraries": [

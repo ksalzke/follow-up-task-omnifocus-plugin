@@ -39,9 +39,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         return __awaiter(this, void 0, void 0, function () {
             var lib;
             return __generator(this, function (_a) {
-                lib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib');
-                lib.addFollowUpTask(selection.tasks[0]);
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        lib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib');
+                        return [4 /*yield*/, lib.addFollowUpTask(selection.tasks[0])];
+                    case 1:
+                        _a.sent();
+                        selection.tasks[0].markComplete();
+                        return [2 /*return*/];
+                }
             });
         });
     });

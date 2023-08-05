@@ -114,7 +114,7 @@ var _this = this;
                     newTaskDetails.deferDate = editForm.values.deferDate;
                     newTaskDetails.dueDate = editForm.values.dueDate;
                     newTaskDetails.note = editForm.values.notes;
-                    newTask = new Task(form.values.taskName, task.before);
+                    newTask = new Task(form.values.taskName, task.after);
                     //save()
                     newTask.clearTags();
                     newTask.note = newTaskDetails.note;
@@ -155,8 +155,6 @@ var _this = this;
                     _a++;
                     return [3 /*break*/, 10];
                 case 14:
-                    // complete original task
-                    task.markComplete(null);
                     if (!(form.values.move || editForm.values.move)) return [3 /*break*/, 17];
                     return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
                 case 15:
