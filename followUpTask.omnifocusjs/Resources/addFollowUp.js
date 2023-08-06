@@ -37,12 +37,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 (function () {
     var action = new PlugIn.Action(function (selection, sender) {
         return __awaiter(this, void 0, void 0, function () {
-            var lib;
+            var lib, param;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         lib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib');
-                        return [4 /*yield*/, lib.addFollowUpTask(selection.tasks[0])];
+                        param = selection.tasks.length === 1 ? selection.tasks[0] : null;
+                        return [4 /*yield*/, lib.addFollowUpTask(param)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -51,7 +52,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         });
     });
     action.validate = function (selection, sender) {
-        return selection.tasks.length === 1;
+        return selection.tasks.length === 1 || selection.tasks.length === 0;
     };
     return action;
 })();

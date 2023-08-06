@@ -42,17 +42,23 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                 switch (_a.label) {
                     case 0:
                         lib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib');
+                        if (!(selection.tasks.length === 1)) return [3 /*break*/, 2];
                         return [4 /*yield*/, lib.addFollowUpTask(selection.tasks[0])];
                     case 1:
                         _a.sent();
                         selection.tasks[0].markComplete();
-                        return [2 /*return*/];
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, lib.addFollowUpTask(null)];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
                 }
             });
         });
     });
     action.validate = function (selection, sender) {
-        return selection.tasks.length === 1;
+        return selection.tasks.length === 0 || selection.tasks.length === 1;
     };
     return action;
 })();

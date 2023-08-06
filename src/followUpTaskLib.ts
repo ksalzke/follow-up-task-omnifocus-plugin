@@ -13,22 +13,44 @@ interface NewTaskDetailsForm extends Form {
         deferDate?: boolean
         dueDate?: boolean
         notes?: boolean
+        prerequisites?: boolean
+        dependents?: boolean
     }
 }
 
 interface EditTaskForm extends Form {
     values: {
+        name?: string
         move?: boolean
         tags?: Tag[]
         flagged?: boolean
         deferDate?: Date
         dueDate?: Date
         notes?: string
+        prerequisites?: Task[]
+        dependents?: Task[]
     }
 
 }
 
+type TaskDetails = {
+    name: string
+    note: string
+    tags: Tag[]
+    flagged: boolean
+    deferDate: Date
+    dueDate: Date
+    prerequisites: Task[]
+    dependents: Task[]
+}
+
 interface FollowUpTaskLib extends PlugIn.Library {
+    emptyTask?: () => TaskDetails
+    initialForm?: (task: Task) => AddTaskForm
+    propertiesToTransferForm?: () => NewTaskDetailsForm
+    editForm?: (originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: Boolean) => EditTaskForm
+    getTaskDetailsFromEditForm?: (editForm: EditTaskForm) => TaskDetails
+    createTask?: (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => Task
     addFollowUpTask?: (task: Task) => Promise<void>
 }
 
@@ -48,33 +70,22 @@ interface ActionGroupLib extends PlugIn.Library {
 
     const lib: FollowUpTaskLib = new PlugIn.Library(new Version('1.0'))
 
-    lib.addFollowUpTask = async (task: Task) => {
-
-        //=== SET-UP =================================================================
-
-        const newTaskDetails = {
-            note: task.note,
-            tags: task.tags,
-            flagged: task.flagged,
-            deferDate: task.deferDate,
-            dueDate: task.dueDate,
+    lib.emptyTask = () => {
+        return {
+            name: '',
+            note: '',
+            tags: [],
+            flagged: false,
+            deferDate: null,
+            dueDate: null,
+            prerequisites: [],
+            dependents: []
         }
+    }
 
-        const dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null)
-        const dependencyLibrary: DependencyLibrary | null = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null
-
+    lib.initialForm = (task: Task) => {
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
-        const moveToActionGroupLibrary: ActionGroupLib | null = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null
-
-        //=== INITIAL FORM ===========================================================
-
         const form: AddTaskForm = new Form()
-
-        const dependencies: Task[] = dependencyLibrary ? dependencyLibrary.getDependents(task) : []
-        const dependencyString = dependencies.length > 0 ? `\n\n DEPENDENT: \n - ${dependencies.map(task => task.name).join('\n - ')}` : '\n\nDEPENDENT: None'
-
-        const prerequisites: Task[] = dependencyLibrary ? dependencyLibrary.getPrereqs(task) : []
-        const prereqString = prerequisites.length > 0 ? `\n\n PREREQUISITE: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : '\n\nPREREQUISITE: None'
 
         form.addField(new Form.Field.String('taskName', 'New Task', null, null), null)
 
@@ -99,72 +110,159 @@ interface ActionGroupLib extends PlugIn.Library {
             return true
         }
 
-        await form.show(`Add Follow-Up Task${dependencyString}${prereqString}`, 'Confirm')
+        return form
 
-        //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
+    }
 
-        if (form.values.propertiesToTransfer === 'select') {
-            const newTaskForm: NewTaskDetailsForm = new Form()
-            newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null)
-            newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null)
-            newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null)
-            newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null)
-            newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null)
-            await newTaskForm.show('Properties For Transfer', 'Confirm')
+    lib.propertiesToTransferForm = () => {
+        const newTaskForm: NewTaskDetailsForm = new Form()
+        newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null)
+        newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null)
+        return newTaskForm
+    }
 
-            newTaskDetails.tags = newTaskForm.values.tags ? task.tags : []
-            newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false
-            newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null
-            newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null
-            newTaskDetails.note = newTaskForm.values.notes ? task.note : null
+    lib.editForm = (originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: boolean) => {
+        const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
+
+        const editForm: EditTaskForm = new Form()
+        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', 'Move?', move), null)
+        editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null)
+        editForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', startingDetails.flagged), null)
+        editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null)
+        editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null)
+        editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null)
+        editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(t => t.name), startingDetails.prerequisites), null)
+        editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
+        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(t => t.name), startingDetails.tags), null)
+        return editForm
+    }
+
+    lib.getTaskDetailsFromEditForm = (editForm: EditTaskForm): TaskDetails => {
+        return {
+            name: editForm.values.name,
+            note: editForm.values.notes,
+            tags: editForm.values.tags,
+            flagged: editForm.values.flagged,
+            deferDate: editForm.values.deferDate,
+            dueDate: editForm.values.dueDate,
+            prerequisites: editForm.values.prerequisites,
+            dependents: editForm.values.dependents
+        }
+    }
+
+    lib.createTask = (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => {
+        const newTask = new Task(taskDetails.name, location)
+
+        newTask.clearTags() // stops any tags being inherited inadvertantly
+
+        newTask.note = taskDetails.note
+        newTask.addTags(taskDetails.tags)
+        newTask.flagged = taskDetails.flagged
+        newTask.deferDate = taskDetails.deferDate
+        newTask.dueDate = taskDetails.dueDate
+
+
+
+        return newTask
+    }
+
+    lib.addFollowUpTask = async (task: Task | null) => {
+
+        //=== SET-UP =================================================================
+
+        const dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null)
+        const dependencyLibrary: DependencyLibrary | null = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null
+
+        const dependencies: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getDependents(task) : []
+        const dependencyString = dependencies.length > 0 ? `\n\n DEPENDENT: \n - ${dependencies.map(task => task.name).join('\n - ')}` : '\n\nDEPENDENT: None'
+
+        const prerequisites: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : []
+        const prereqString = prerequisites.length > 0 ? `\n\n PREREQUISITE: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : '\n\nPREREQUISITE: None'
+
+        let newTaskDetails: TaskDetails = task ? {
+            name: task.name,
+            note: task.note,
+            tags: task.tags,
+            flagged: task.flagged,
+            deferDate: task.deferDate,
+            dueDate: task.dueDate,
+            prerequisites: prerequisites,
+            dependents: dependencies
+
+        } : lib.emptyTask()
+
+        let move = false
+
+        const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
+        const moveToActionGroupLibrary: ActionGroupLib | null = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null
+
+        if (task) {
+
+            //=== INITIAL FORM ===========================================================
+
+            const form = lib.initialForm(task)
+            await form.show(`Add Follow-Up Task${dependencyString}${prereqString}`, 'Confirm')
+            newTaskDetails.name = form.values.taskName
+
+            //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
+
+            switch (form.values.propertiesToTransfer) {
+                case 'select':
+                    const newTaskForm = lib.propertiesToTransferForm()
+                    await newTaskForm.show('Properties For Transfer', 'Confirm')
+
+                    newTaskDetails.tags = newTaskForm.values.tags ? task.tags : []
+                    newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false
+                    newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null
+                    newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null
+                    newTaskDetails.note = newTaskForm.values.notes ? task.note : null
+                    newTaskDetails.prerequisites = newTaskForm.values.prerequisites ? prerequisites : []
+                    newTaskDetails.dependents = newTaskForm.values.dependents ? dependencies : []
+                    break;
+                case 'all_inc_dependencies':
+                    break
+                case 'all_exc_dependencies':
+                    newTaskDetails.prerequisites = []
+                    newTaskDetails.dependents = []
+                    break
+                // TODO: don't copy dependency tags
+
+            }
+
         }
 
         //=== EDIT TASK FORM ==========================================================
 
-        const editForm: EditTaskForm = new Form()
-        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', 'Move?', form.values.move), null)
-        editForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', newTaskDetails.flagged), null)
-        editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', newTaskDetails.deferDate, null), null)
-        editForm.addField(new Form.Field.Date('dueDate', 'Due Date', newTaskDetails.dueDate, null), null)
-        editForm.addField(new Form.Field.String('notes', 'Notes', newTaskDetails.note, null), null)
-        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(t => t.name), newTaskDetails.tags), null)
-
+        const editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move)
         await editForm.show('Edit New Task Details', 'Confirm')
+        move = editForm.values.move
 
-        newTaskDetails.tags = editForm.values.tags
-        newTaskDetails.flagged = editForm.values.flagged
-        newTaskDetails.deferDate = editForm.values.deferDate
-        newTaskDetails.dueDate = editForm.values.dueDate
-        newTaskDetails.note = editForm.values.notes
+        newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)
 
         //=== CREATE TASK =============================================================
 
         // create basic task details
-
-        const newTask: Task = new Task(form.values.taskName, task.after)
-        //save()
-        newTask.clearTags()
-        newTask.note = newTaskDetails.note
-        newTask.addTags(newTaskDetails.tags)
-        newTask.flagged = newTaskDetails.flagged
-        newTask.dueDate = newTaskDetails.dueDate
-        newTask.deferDate = newTaskDetails.deferDate
+        const locationToAdd = task ? task.after : inbox.ending
+        const newTask = lib.createTask(newTaskDetails, locationToAdd)
 
         // update dependencies
-        if (form.values.propertiesToTransfer === 'all_inc_dependencies') {
-            for (const prereq of prerequisites) {
-                await dependencyLibrary.addDependency(prereq, newTask)
-                await dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)
-            }
+        for (const prereq of newTaskDetails.prerequisites) {
+            await dependencyLibrary.addDependency(prereq, newTask)
+            await dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)
+        }
 
-            for (const dep of dependencies) {
-                await dependencyLibrary.addDependency(newTask, dep)
-                await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)
-            }
+        for (const dep of newTaskDetails.dependents) {
+            await dependencyLibrary.addDependency(newTask, dep)
+            await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)
         }
 
         // move the task if specified
-        if (form.values.move || editForm.values.move) {
+        if (move) {
             const proj = await moveToActionGroupLibrary.projectPrompt()
             await moveToActionGroupLibrary.actionGroupPrompt([newTask], proj)
         }

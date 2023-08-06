@@ -37,133 +37,194 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var _this = this;
 (function () {
     var lib = new PlugIn.Library(new Version('1.0'));
+    lib.emptyTask = function () {
+        return {
+            name: '',
+            note: '',
+            tags: [],
+            flagged: false,
+            deferDate: null,
+            dueDate: null,
+            prerequisites: [],
+            dependents: []
+        };
+    };
+    lib.initialForm = function (task) {
+        var moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
+        var form = new Form();
+        form.addField(new Form.Field.String('taskName', 'New Task', null, null), null);
+        form.addField(new Form.Field.Option('propertiesToTransfer', 'Properties To Transfer', ['all_exc_dependencies', 'all_inc_dependencies', 'select'], ['All except dependencies', 'All including dependencies', 'Select manually'], 'all_exc_dependencies', null), null);
+        if (moveToActionGroupPlugIn)
+            form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
+        // add validation so that 'Move' is not available if 'Select manually' is chosen
+        form.validate = function (form) {
+            if (form.values.taskName === '' || form.values.taskName === null)
+                return false; // can't proceed if no task name entered
+            var moveCheckboxShowing = form.fields.some(function (field) { return field.key === 'move'; });
+            // if 'select' is chosen and move checkbox is shown, hide it (and vice versa)
+            if (form.values.propertiesToTransfer === 'select' && moveCheckboxShowing) {
+                form.removeField(form.fields.find(function (field) { return field.key === 'move'; }));
+            }
+            if (form.values.propertiesToTransfer !== 'select' && !moveCheckboxShowing && moveToActionGroupPlugIn) {
+                form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
+            }
+            return true;
+        };
+        return form;
+    };
+    lib.propertiesToTransferForm = function () {
+        var newTaskForm = new Form();
+        newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null);
+        newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null);
+        return newTaskForm;
+    };
+    lib.editForm = function (originalPrereqs, originalDeps, startingDetails, move) {
+        var moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
+        var editForm = new Form();
+        if (moveToActionGroupPlugIn)
+            editForm.addField(new Form.Field.Checkbox('move', 'Move?', move), null);
+        editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null);
+        editForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', startingDetails.flagged), null);
+        editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null);
+        editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null);
+        editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null);
+        editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(function (t) { return t.name; }), startingDetails.prerequisites), null);
+        editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(function (t) { return t.name; }), startingDetails.dependents), null);
+        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(function (t) { return t.name; }), startingDetails.tags), null);
+        return editForm;
+    };
+    lib.getTaskDetailsFromEditForm = function (editForm) {
+        return {
+            name: editForm.values.name,
+            note: editForm.values.notes,
+            tags: editForm.values.tags,
+            flagged: editForm.values.flagged,
+            deferDate: editForm.values.deferDate,
+            dueDate: editForm.values.dueDate,
+            prerequisites: editForm.values.prerequisites,
+            dependents: editForm.values.dependents
+        };
+    };
+    lib.createTask = function (taskDetails, location) {
+        var newTask = new Task(taskDetails.name, location);
+        newTask.clearTags(); // stops any tags being inherited inadvertantly
+        newTask.note = taskDetails.note;
+        newTask.addTags(taskDetails.tags);
+        newTask.flagged = taskDetails.flagged;
+        newTask.deferDate = taskDetails.deferDate;
+        newTask.dueDate = taskDetails.dueDate;
+        return newTask;
+    };
     lib.addFollowUpTask = function (task) { return __awaiter(_this, void 0, void 0, function () {
-        var newTaskDetails, dependencyPlugIn, dependencyLibrary, moveToActionGroupPlugIn, moveToActionGroupLibrary, form, dependencies, dependencyString, prerequisites, prereqString, newTaskForm, editForm, newTask, _i, prerequisites_1, prereq, _a, dependencies_1, dep, proj;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var dependencyPlugIn, dependencyLibrary, dependencies, dependencyString, prerequisites, prereqString, newTaskDetails, move, moveToActionGroupPlugIn, moveToActionGroupLibrary, form, _a, newTaskForm, editForm, locationToAdd, newTask, _i, _b, prereq, _c, _d, dep, proj;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
-                    newTaskDetails = {
+                    dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null);
+                    dependencyLibrary = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null;
+                    dependencies = (dependencyLibrary && task) ? dependencyLibrary.getDependents(task) : [];
+                    dependencyString = dependencies.length > 0 ? "\n\n DEPENDENT: \n - " + dependencies.map(function (task) { return task.name; }).join('\n - ') : '\n\nDEPENDENT: None';
+                    prerequisites = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : [];
+                    prereqString = prerequisites.length > 0 ? "\n\n PREREQUISITE: \n - " + prerequisites.map(function (task) { return task.name; }).join('\n - ') : '\n\nPREREQUISITE: None';
+                    newTaskDetails = task ? {
+                        name: task.name,
                         note: task.note,
                         tags: task.tags,
                         flagged: task.flagged,
                         deferDate: task.deferDate,
-                        dueDate: task.dueDate
-                    };
-                    dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null);
-                    dependencyLibrary = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null;
+                        dueDate: task.dueDate,
+                        prerequisites: prerequisites,
+                        dependents: dependencies
+                    } : lib.emptyTask();
+                    move = false;
                     moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
                     moveToActionGroupLibrary = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null;
-                    form = new Form();
-                    dependencies = dependencyLibrary ? dependencyLibrary.getDependents(task) : [];
-                    dependencyString = dependencies.length > 0 ? "\n\n DEPENDENT: \n - " + dependencies.map(function (task) { return task.name; }).join('\n - ') : '\n\nDEPENDENT: None';
-                    prerequisites = dependencyLibrary ? dependencyLibrary.getPrereqs(task) : [];
-                    prereqString = prerequisites.length > 0 ? "\n\n PREREQUISITE: \n - " + prerequisites.map(function (task) { return task.name; }).join('\n - ') : '\n\nPREREQUISITE: None';
-                    form.addField(new Form.Field.String('taskName', 'New Task', null, null), null);
-                    form.addField(new Form.Field.Option('propertiesToTransfer', 'Properties To Transfer', ['all_exc_dependencies', 'all_inc_dependencies', 'select'], ['All except dependencies', 'All including dependencies', 'Select manually'], 'all_exc_dependencies', null), null);
-                    if (moveToActionGroupPlugIn)
-                        form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
-                    // add validation so that 'Move' is not available if 'Select manually' is chosen
-                    form.validate = function (form) {
-                        if (form.values.taskName === '' || form.values.taskName === null)
-                            return false; // can't proceed if no task name entered
-                        var moveCheckboxShowing = form.fields.some(function (field) { return field.key === 'move'; });
-                        // if 'select' is chosen and move checkbox is shown, hide it (and vice versa)
-                        if (form.values.propertiesToTransfer === 'select' && moveCheckboxShowing) {
-                            form.removeField(form.fields.find(function (field) { return field.key === 'move'; }));
-                        }
-                        if (form.values.propertiesToTransfer !== 'select' && !moveCheckboxShowing && moveToActionGroupPlugIn) {
-                            form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
-                        }
-                        return true;
-                    };
-                    return [4 /*yield*/, form.show("Add Follow-Up Task" + dependencyString + prereqString, 'Confirm')
-                        //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
-                    ];
+                    if (!task) return [3 /*break*/, 6];
+                    form = lib.initialForm(task);
+                    return [4 /*yield*/, form.show("Add Follow-Up Task" + dependencyString + prereqString, 'Confirm')];
                 case 1:
-                    _b.sent();
-                    if (!(form.values.propertiesToTransfer === 'select')) return [3 /*break*/, 3];
-                    newTaskForm = new Form();
-                    newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
-                    newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
-                    newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
-                    newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null);
-                    newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null);
-                    return [4 /*yield*/, newTaskForm.show('Properties For Transfer', 'Confirm')];
+                    _e.sent();
+                    newTaskDetails.name = form.values.taskName;
+                    _a = form.values.propertiesToTransfer;
+                    switch (_a) {
+                        case 'select': return [3 /*break*/, 2];
+                        case 'all_inc_dependencies': return [3 /*break*/, 4];
+                        case 'all_exc_dependencies': return [3 /*break*/, 5];
+                    }
+                    return [3 /*break*/, 6];
                 case 2:
-                    _b.sent();
+                    newTaskForm = lib.propertiesToTransferForm();
+                    return [4 /*yield*/, newTaskForm.show('Properties For Transfer', 'Confirm')];
+                case 3:
+                    _e.sent();
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : [];
                     newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false;
                     newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null;
                     newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null;
                     newTaskDetails.note = newTaskForm.values.notes ? task.note : null;
-                    _b.label = 3;
-                case 3:
-                    editForm = new Form();
-                    if (moveToActionGroupPlugIn)
-                        editForm.addField(new Form.Field.Checkbox('move', 'Move?', form.values.move), null);
-                    editForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', newTaskDetails.flagged), null);
-                    editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', newTaskDetails.deferDate, null), null);
-                    editForm.addField(new Form.Field.Date('dueDate', 'Due Date', newTaskDetails.dueDate, null), null);
-                    editForm.addField(new Form.Field.String('notes', 'Notes', newTaskDetails.note, null), null);
-                    editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(function (t) { return t.name; }), newTaskDetails.tags), null);
-                    return [4 /*yield*/, editForm.show('Edit New Task Details', 'Confirm')];
-                case 4:
-                    _b.sent();
-                    newTaskDetails.tags = editForm.values.tags;
-                    newTaskDetails.flagged = editForm.values.flagged;
-                    newTaskDetails.deferDate = editForm.values.deferDate;
-                    newTaskDetails.dueDate = editForm.values.dueDate;
-                    newTaskDetails.note = editForm.values.notes;
-                    newTask = new Task(form.values.taskName, task.after);
-                    //save()
-                    newTask.clearTags();
-                    newTask.note = newTaskDetails.note;
-                    newTask.addTags(newTaskDetails.tags);
-                    newTask.flagged = newTaskDetails.flagged;
-                    newTask.dueDate = newTaskDetails.dueDate;
-                    newTask.deferDate = newTaskDetails.deferDate;
-                    if (!(form.values.propertiesToTransfer === 'all_inc_dependencies')) return [3 /*break*/, 14];
-                    _i = 0, prerequisites_1 = prerequisites;
-                    _b.label = 5;
+                    newTaskDetails.prerequisites = newTaskForm.values.prerequisites ? prerequisites : [];
+                    newTaskDetails.dependents = newTaskForm.values.dependents ? dependencies : [];
+                    return [3 /*break*/, 6];
+                case 4: return [3 /*break*/, 6];
                 case 5:
-                    if (!(_i < prerequisites_1.length)) return [3 /*break*/, 9];
-                    prereq = prerequisites_1[_i];
-                    return [4 /*yield*/, dependencyLibrary.addDependency(prereq, newTask)];
+                    newTaskDetails.prerequisites = [];
+                    newTaskDetails.dependents = [];
+                    return [3 /*break*/, 6];
                 case 6:
-                    _b.sent();
-                    return [4 /*yield*/, dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)];
+                    editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move);
+                    return [4 /*yield*/, editForm.show('Edit New Task Details', 'Confirm')];
                 case 7:
-                    _b.sent();
-                    _b.label = 8;
+                    _e.sent();
+                    move = editForm.values.move;
+                    newTaskDetails = lib.getTaskDetailsFromEditForm(editForm);
+                    locationToAdd = task ? task.after : inbox.ending;
+                    newTask = lib.createTask(newTaskDetails, locationToAdd);
+                    _i = 0, _b = newTaskDetails.prerequisites;
+                    _e.label = 8;
                 case 8:
-                    _i++;
-                    return [3 /*break*/, 5];
+                    if (!(_i < _b.length)) return [3 /*break*/, 12];
+                    prereq = _b[_i];
+                    return [4 /*yield*/, dependencyLibrary.addDependency(prereq, newTask)];
                 case 9:
-                    _a = 0, dependencies_1 = dependencies;
-                    _b.label = 10;
+                    _e.sent();
+                    return [4 /*yield*/, dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)];
                 case 10:
-                    if (!(_a < dependencies_1.length)) return [3 /*break*/, 14];
-                    dep = dependencies_1[_a];
-                    return [4 /*yield*/, dependencyLibrary.addDependency(newTask, dep)];
+                    _e.sent();
+                    _e.label = 11;
                 case 11:
-                    _b.sent();
-                    return [4 /*yield*/, dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)];
+                    _i++;
+                    return [3 /*break*/, 8];
                 case 12:
-                    _b.sent();
-                    _b.label = 13;
+                    _c = 0, _d = newTaskDetails.dependents;
+                    _e.label = 13;
                 case 13:
-                    _a++;
-                    return [3 /*break*/, 10];
+                    if (!(_c < _d.length)) return [3 /*break*/, 17];
+                    dep = _d[_c];
+                    return [4 /*yield*/, dependencyLibrary.addDependency(newTask, dep)];
                 case 14:
-                    if (!(form.values.move || editForm.values.move)) return [3 /*break*/, 17];
-                    return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
+                    _e.sent();
+                    return [4 /*yield*/, dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)];
                 case 15:
-                    proj = _b.sent();
-                    return [4 /*yield*/, moveToActionGroupLibrary.actionGroupPrompt([newTask], proj)];
+                    _e.sent();
+                    _e.label = 16;
                 case 16:
-                    _b.sent();
-                    _b.label = 17;
-                case 17: return [2 /*return*/];
+                    _c++;
+                    return [3 /*break*/, 13];
+                case 17:
+                    if (!move) return [3 /*break*/, 20];
+                    return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
+                case 18:
+                    proj = _e.sent();
+                    return [4 /*yield*/, moveToActionGroupLibrary.actionGroupPrompt([newTask], proj)];
+                case 19:
+                    _e.sent();
+                    _e.label = 20;
+                case 20: return [2 /*return*/];
             }
         });
     }); };

@@ -2,6 +2,7 @@ declare var flattenedProjects: ProjectArray
 declare var flattenedTags: TagArray
 declare var flattenedTasks: TaskArray
 declare var tags: Tags
+declare var inbox: Inbox
 declare var settings: Settings
 declare var console: Console
 declare function moveTasks(tasks: Task[], position: Task | Project | Task.ChildInsertionLocation): void
