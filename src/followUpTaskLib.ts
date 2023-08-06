@@ -179,10 +179,10 @@ interface ActionGroupLib extends PlugIn.Library {
         const dependencyLibrary: DependencyLibrary | null = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null
 
         const dependencies: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getDependents(task) : []
-        const dependencyString = dependencies.length > 0 ? `\n\n DEPENDENT: \n - ${dependencies.map(task => task.name).join('\n - ')}` : '\n\nDEPENDENT: None'
+        const dependencyString = dependencies.length > 0 ? `\n\nDependent: \n - ${dependencies.map(task => task.name).join('\n - ')}` : ''
 
         const prerequisites: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : []
-        const prereqString = prerequisites.length > 0 ? `\n\n PREREQUISITE: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : '\n\nPREREQUISITE: None'
+        const prereqString = prerequisites.length > 0 ? `\n\nPrerequisite: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : ''
 
         let newTaskDetails: TaskDetails = task ? {
             name: task.name,
@@ -206,7 +206,7 @@ interface ActionGroupLib extends PlugIn.Library {
             //=== INITIAL FORM ===========================================================
 
             const form = lib.initialForm(task)
-            await form.show(`Add Follow-Up Task${dependencyString}${prereqString}`, 'Confirm')
+            await form.show(`ADD FOLLOW-UP TASK${dependencyString}${prereqString}`, 'Confirm')
             newTaskDetails.name = form.values.taskName
 
             //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
@@ -214,7 +214,7 @@ interface ActionGroupLib extends PlugIn.Library {
             switch (form.values.propertiesToTransfer) {
                 case 'select':
                     const newTaskForm = lib.propertiesToTransferForm()
-                    await newTaskForm.show('Properties For Transfer', 'Confirm')
+                    await newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm')
 
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : []
                     newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false
@@ -239,7 +239,7 @@ interface ActionGroupLib extends PlugIn.Library {
         //=== EDIT TASK FORM ==========================================================
 
         const editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move)
-        await editForm.show('Edit New Task Details', 'Confirm')
+        await editForm.show('EDIT NEW TASK DETAILS', 'Confirm')
         move = editForm.values.move
 
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)

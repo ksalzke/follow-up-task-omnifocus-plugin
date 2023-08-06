@@ -128,9 +128,9 @@ var _this = this;
                     dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null);
                     dependencyLibrary = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null;
                     dependencies = (dependencyLibrary && task) ? dependencyLibrary.getDependents(task) : [];
-                    dependencyString = dependencies.length > 0 ? "\n\n DEPENDENT: \n - " + dependencies.map(function (task) { return task.name; }).join('\n - ') : '\n\nDEPENDENT: None';
+                    dependencyString = dependencies.length > 0 ? "\n\nDependent: \n - " + dependencies.map(function (task) { return task.name; }).join('\n - ') : '';
                     prerequisites = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : [];
-                    prereqString = prerequisites.length > 0 ? "\n\n PREREQUISITE: \n - " + prerequisites.map(function (task) { return task.name; }).join('\n - ') : '\n\nPREREQUISITE: None';
+                    prereqString = prerequisites.length > 0 ? "\n\nPrerequisite: \n - " + prerequisites.map(function (task) { return task.name; }).join('\n - ') : '';
                     newTaskDetails = task ? {
                         name: task.name,
                         note: task.note,
@@ -146,7 +146,7 @@ var _this = this;
                     moveToActionGroupLibrary = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null;
                     if (!task) return [3 /*break*/, 6];
                     form = lib.initialForm(task);
-                    return [4 /*yield*/, form.show("Add Follow-Up Task" + dependencyString + prereqString, 'Confirm')];
+                    return [4 /*yield*/, form.show("ADD FOLLOW-UP TASK" + dependencyString + prereqString, 'Confirm')];
                 case 1:
                     _e.sent();
                     newTaskDetails.name = form.values.taskName;
@@ -159,7 +159,7 @@ var _this = this;
                     return [3 /*break*/, 6];
                 case 2:
                     newTaskForm = lib.propertiesToTransferForm();
-                    return [4 /*yield*/, newTaskForm.show('Properties For Transfer', 'Confirm')];
+                    return [4 /*yield*/, newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm')];
                 case 3:
                     _e.sent();
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : [];
@@ -177,7 +177,7 @@ var _this = this;
                     return [3 /*break*/, 6];
                 case 6:
                     editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move);
-                    return [4 /*yield*/, editForm.show('Edit New Task Details', 'Confirm')];
+                    return [4 /*yield*/, editForm.show('EDIT NEW TASK DETAILS', 'Confirm')];
                 case 7:
                     _e.sent();
                     move = editForm.values.move;
