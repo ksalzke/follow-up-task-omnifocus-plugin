@@ -47,7 +47,7 @@ type TaskDetails = {
 interface FollowUpTaskLib extends PlugIn.Library {
     emptyTask?: () => TaskDetails
     initialForm?: (task: Task) => AddTaskForm
-    propertiesToTransferForm?: () => NewTaskDetailsForm
+    propertiesToTransferForm?: (hasPrereqs: boolean, hasDeps: boolean) => NewTaskDetailsForm
     editForm?: (originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: Boolean) => EditTaskForm
     getTaskDetailsFromEditForm?: (editForm: EditTaskForm) => TaskDetails
     createTask?: (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => Task
@@ -114,15 +114,15 @@ interface ActionGroupLib extends PlugIn.Library {
 
     }
 
-    lib.propertiesToTransferForm = () => {
+    lib.propertiesToTransferForm = (hasPrereqs: boolean, hasDeps: boolean) => {
         const newTaskForm: NewTaskDetailsForm = new Form()
         newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null)
         newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null)
         newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null)
         newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null)
         newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null)
-        newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null)
-        newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null)
+        if (hasPrereqs) newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null)
+        if (hasDeps) newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null)
         return newTaskForm
     }
 
@@ -150,8 +150,8 @@ interface ActionGroupLib extends PlugIn.Library {
             flagged: editForm.values.flagged,
             deferDate: editForm.values.deferDate,
             dueDate: editForm.values.dueDate,
-            prerequisites: editForm.values.prerequisites,
-            dependents: editForm.values.dependents
+            prerequisites: editForm.values.prerequisites || [],
+            dependents: editForm.values.dependents || []
         }
     }
 
@@ -213,7 +213,7 @@ interface ActionGroupLib extends PlugIn.Library {
 
             switch (form.values.propertiesToTransfer) {
                 case 'select':
-                    const newTaskForm = lib.propertiesToTransferForm()
+                    const newTaskForm = lib.propertiesToTransferForm(prerequisites.length > 0, dependencies.length > 0)
                     await newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm')
 
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : []

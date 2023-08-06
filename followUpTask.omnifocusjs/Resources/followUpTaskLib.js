@@ -72,15 +72,17 @@ var _this = this;
         };
         return form;
     };
-    lib.propertiesToTransferForm = function () {
+    lib.propertiesToTransferForm = function (hasPrereqs, hasDeps) {
         var newTaskForm = new Form();
         newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
         newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
         newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
         newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null);
         newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null);
+        if (hasPrereqs)
+            newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null);
+        if (hasDeps)
+            newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null);
         return newTaskForm;
     };
     lib.editForm = function (originalPrereqs, originalDeps, startingDetails, move) {
@@ -106,8 +108,8 @@ var _this = this;
             flagged: editForm.values.flagged,
             deferDate: editForm.values.deferDate,
             dueDate: editForm.values.dueDate,
-            prerequisites: editForm.values.prerequisites,
-            dependents: editForm.values.dependents
+            prerequisites: editForm.values.prerequisites || [],
+            dependents: editForm.values.dependents || []
         };
     };
     lib.createTask = function (taskDetails, location) {
@@ -158,7 +160,7 @@ var _this = this;
                     }
                     return [3 /*break*/, 6];
                 case 2:
-                    newTaskForm = lib.propertiesToTransferForm();
+                    newTaskForm = lib.propertiesToTransferForm(prerequisites.length > 0, dependencies.length > 0);
                     return [4 /*yield*/, newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm')];
                 case 3:
                     _e.sent();
