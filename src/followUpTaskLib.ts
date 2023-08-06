@@ -94,7 +94,7 @@ interface ActionGroupLib extends PlugIn.Library {
 
         // add validation so that 'Move' is not available if 'Select manually' is chosen
         form.validate = (form: AddTaskForm) => {
-            if (form.values.taskName === '' || form.values.taskName === null) return false // can't proceed if no task name entered
+            if (!form.values.taskName || form.values.taskName === '') return false // can't proceed if no task name entered
 
             const moveCheckboxShowing = form.fields.some(field => field.key === 'move')
 

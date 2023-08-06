@@ -58,7 +58,7 @@ var _this = this;
             form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
         // add validation so that 'Move' is not available if 'Select manually' is chosen
         form.validate = function (form) {
-            if (form.values.taskName === '' || form.values.taskName === null)
+            if (!form.values.taskName || form.values.taskName === '')
                 return false; // can't proceed if no task name entered
             var moveCheckboxShowing = form.fields.some(function (field) { return field.key === 'move'; });
             // if 'select' is chosen and move checkbox is shown, hide it (and vice versa)
