@@ -34,9 +34,39 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var _this = this;
 (function () {
     var lib = new PlugIn.Library(new Version('1.0'));
+    lib.loadSyncedPrefs = function () {
+        var syncedPrefsPlugin = PlugIn.find('com.KaitlinSalzke.SyncedPrefLibrary', null);
+        if (syncedPrefsPlugin !== null) {
+            var syncedPrefLib = syncedPrefsPlugin.library('syncedPrefLibrary');
+            var SyncedPref_1 = new syncedPrefLib.SyncedPref('com.KaitlinSalzke.followUpTask');
+            return SyncedPref_1;
+        }
+        else {
+            var alert = new Alert('Synced Preferences Library Required', 'For the Follow Up Task plug-in to work correctly, the \'Synced Preferences for OmniFocus\' plug-in (https://github.com/ksalzke/synced-preferences-for-omnifocus) is also required and needs to be added to the plug-in folder separately. Either you do not currently have this plugin installed, or it is not installed correctly.');
+            alert.show(function () { });
+        }
+    };
+    lib.tagsToShow = function () {
+        var syncedPrefs = lib.loadSyncedPrefs();
+        var currentSetting = syncedPrefs.read('tagIDs');
+        if (currentSetting) {
+            return currentSetting.map(function (id) { return Tag.byIdentifier(id); });
+        }
+        else
+            return [];
+    };
     lib.emptyTask = function () {
         return {
             name: '',
@@ -99,7 +129,8 @@ var _this = this;
         editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null);
         editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(function (t) { return t.name; }), startingDetails.dependents), null);
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null);
-        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(function (t) { return t.name; }), startingDetails.tags), null);
+        var tagsToShow = __spreadArray(__spreadArray([], startingDetails.tags, true), lib.tagsToShow(), true);
+        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(function (t) { return t.name; }), startingDetails.tags), null);
         return editForm;
     };
     lib.getTaskDetailsFromEditForm = function (editForm) {
