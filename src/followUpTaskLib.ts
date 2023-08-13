@@ -27,10 +27,20 @@ interface EditTaskForm extends Form {
         deferDate?: Date
         dueDate?: Date
         notes?: string
-        prerequisites?: Task[]
+        prerequisites?: []
+        addPrereq?: boolean
         dependents?: Task[]
+        addDep?: boolean
     }
 
+}
+
+interface FuzzySearchForm extends Form {
+    values: {
+        textInput?: string
+        menuItem?: any
+        another?: boolean
+    }
 }
 
 type TaskDetails = {
@@ -65,6 +75,13 @@ interface ActionGroupLib extends PlugIn.Library {
     projectPrompt?: () => Promise<Project>
     actionGroupPrompt?: (tasks: Task[], proj: Project) => Promise<void>
 }
+
+interface FuzzySearchLibrary extends PlugIn.Library {
+    searchForm?: (allItems: any, itemTitles: string[], firstSelected: any, matchingFunction: Function | null) => FuzzySearchForm
+    allTasksFuzzySearchForm?: () => FuzzySearchForm
+    remainingTasksFuzzySearchForm?: () => FuzzySearchForm
+}
+
 
 (() => {
 
@@ -137,7 +154,9 @@ interface ActionGroupLib extends PlugIn.Library {
         editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null)
         editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null)
         editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(t => t.name), startingDetails.prerequisites), null)
+        editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null)
         editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
+        editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
         editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(t => t.name), startingDetails.tags), null)
         return editForm
     }
@@ -183,6 +202,16 @@ interface ActionGroupLib extends PlugIn.Library {
 
         const prerequisites: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : []
         const prereqString = prerequisites.length > 0 ? `\n\nPrerequisite: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : ''
+
+        const fuzzySearchPlugIn = PlugIn.find('com.KaitlinSalzke.fuzzySearchLib', null)
+        if (!fuzzySearchPlugIn) {
+            const alert = new Alert(
+                'Fuzzy Search Library Required',
+                'For the Follow-Up Task plug-in to work correctly, the \'Fuzzy Search\' plug-in (https://github.com/ksalzke/fuzzy-search-library) is also required and needs to be added to the plug-in folder separately. Either you do not currently have this plugin installed, or it is not installed correctly.'
+            )
+            alert.show(null)
+        }
+        const fuzzySearchLib: FuzzySearchLibrary = fuzzySearchPlugIn.library('fuzzySearchLib')
 
         let newTaskDetails: TaskDetails = task ? {
             name: task.name,
@@ -241,8 +270,37 @@ interface ActionGroupLib extends PlugIn.Library {
         const editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move)
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm')
         move = editForm.values.move
-
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)
+
+        //=== PREREQ/DEP FORMS ========================================================
+
+        if (editForm.values.addPrereq) {
+            let prereqForm: FuzzySearchForm
+            do {
+                prereqForm = fuzzySearchLib.remainingTasksFuzzySearchForm()
+                prereqForm.addField(new Form.Field.Checkbox('another', 'Add another prerequisite?', false), null)
+                // show form
+                await prereqForm.show('ADD PREREQUISITE', 'Confirm')
+
+                // processing
+                const prereq = prereqForm.values.menuItem
+                newTaskDetails.prerequisites.push(prereq)
+            } while (prereqForm.values.another)
+        }
+
+        if (editForm.values.addDep) {
+            let depForm: FuzzySearchForm
+            do {
+                depForm = fuzzySearchLib.remainingTasksFuzzySearchForm()
+                depForm.addField(new Form.Field.Checkbox('another', 'Add another dependent?', false), null)
+                // show form
+                await depForm.show('ADD DEPENDENT', 'Confirm')
+
+                // processing
+                const dep = depForm.values.menuItem
+                newTaskDetails.dependents.push(dep)
+            } while (depForm.values.another)
+        }
 
         //=== CREATE TASK =============================================================
 
