@@ -156,7 +156,7 @@ var _this = this;
         return newTask;
     };
     lib.addFollowUpTask = function (task) { return __awaiter(_this, void 0, void 0, function () {
-        var dependencyPlugIn, dependencyLibrary, dependencies, dependencyString, prerequisites, prereqString, fuzzySearchPlugIn, alert, fuzzySearchLib, newTaskDetails, move, moveToActionGroupPlugIn, moveToActionGroupLibrary, form, _a, newTaskForm, editForm, prereqForm, prereq, depForm, dep, locationToAdd, newTask, _i, _b, prereq, _c, _d, dep, proj;
+        var dependencyPlugIn, dependencyLibrary, dependencies, dependencyString, prerequisites, prereqString, fuzzySearchPlugIn, alert, fuzzySearchLib, newTaskDetails, move, moveToActionGroupPlugIn, moveToActionGroupLibrary, form, _a, newTaskForm, prereqTag_1, depTag_1, editForm, prereqForm, prereq, depForm, dep, locationToAdd, newTask, _i, _b, prereq, _c, _d, dep, proj;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
@@ -185,7 +185,7 @@ var _this = this;
                     move = false;
                     moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
                     moveToActionGroupLibrary = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null;
-                    if (!task) return [3 /*break*/, 6];
+                    if (!task) return [3 /*break*/, 9];
                     form = lib.initialForm(task);
                     return [4 /*yield*/, form.show("ADD FOLLOW-UP TASK" + dependencyString + prereqString, 'Confirm')];
                 case 1:
@@ -216,96 +216,104 @@ var _this = this;
                     newTaskDetails.prerequisites = [];
                     newTaskDetails.dependents = [];
                     return [3 /*break*/, 6];
-                case 6:
+                case 6: return [4 /*yield*/, dependencyLibrary.getPrefTag('prerequisiteTag')];
+                case 7:
+                    prereqTag_1 = _e.sent();
+                    return [4 /*yield*/, dependencyLibrary.getPrefTag('dependentTag')];
+                case 8:
+                    depTag_1 = _e.sent();
+                    newTaskDetails.tags = newTaskDetails.tags.filter(function (tag) { return ![prereqTag_1, depTag_1].includes(tag); });
+                    _e.label = 9;
+                case 9:
                     editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move);
                     return [4 /*yield*/, editForm.show('EDIT NEW TASK DETAILS', 'Confirm')];
-                case 7:
+                case 10:
                     _e.sent();
                     move = editForm.values.move;
                     newTaskDetails = lib.getTaskDetailsFromEditForm(editForm);
-                    if (!editForm.values.addPrereq) return [3 /*break*/, 11];
+                    if (!editForm.values.addPrereq) return [3 /*break*/, 14];
                     prereqForm = void 0;
-                    _e.label = 8;
-                case 8:
+                    _e.label = 11;
+                case 11:
                     prereqForm = fuzzySearchLib.remainingTasksFuzzySearchForm();
                     prereqForm.addField(new Form.Field.Checkbox('another', 'Add another prerequisite?', false), null);
                     // show form
                     return [4 /*yield*/, prereqForm.show('ADD PREREQUISITE', 'Confirm')
                         // processing
                     ];
-                case 9:
+                case 12:
                     // show form
                     _e.sent();
                     prereq = prereqForm.values.menuItem;
                     newTaskDetails.prerequisites.push(prereq);
-                    _e.label = 10;
-                case 10:
-                    if (prereqForm.values.another) return [3 /*break*/, 8];
-                    _e.label = 11;
-                case 11:
-                    if (!editForm.values.addDep) return [3 /*break*/, 15];
+                    _e.label = 13;
+                case 13:
+                    if (prereqForm.values.another) return [3 /*break*/, 11];
+                    _e.label = 14;
+                case 14:
+                    if (!editForm.values.addDep) return [3 /*break*/, 18];
                     depForm = void 0;
-                    _e.label = 12;
-                case 12:
+                    _e.label = 15;
+                case 15:
                     depForm = fuzzySearchLib.remainingTasksFuzzySearchForm();
                     depForm.addField(new Form.Field.Checkbox('another', 'Add another dependent?', false), null);
                     // show form
                     return [4 /*yield*/, depForm.show('ADD DEPENDENT', 'Confirm')
                         // processing
                     ];
-                case 13:
+                case 16:
                     // show form
                     _e.sent();
                     dep = depForm.values.menuItem;
                     newTaskDetails.dependents.push(dep);
-                    _e.label = 14;
-                case 14:
-                    if (depForm.values.another) return [3 /*break*/, 12];
-                    _e.label = 15;
-                case 15:
+                    _e.label = 17;
+                case 17:
+                    if (depForm.values.another) return [3 /*break*/, 15];
+                    _e.label = 18;
+                case 18:
                     locationToAdd = task ? task.after : inbox.ending;
                     newTask = lib.createTask(newTaskDetails, locationToAdd);
                     _i = 0, _b = newTaskDetails.prerequisites;
-                    _e.label = 16;
-                case 16:
-                    if (!(_i < _b.length)) return [3 /*break*/, 20];
-                    prereq = _b[_i];
-                    return [4 /*yield*/, dependencyLibrary.addDependency(prereq, newTask)];
-                case 17:
-                    _e.sent();
-                    return [4 /*yield*/, dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)];
-                case 18:
-                    _e.sent();
                     _e.label = 19;
                 case 19:
-                    _i++;
-                    return [3 /*break*/, 16];
+                    if (!(_i < _b.length)) return [3 /*break*/, 23];
+                    prereq = _b[_i];
+                    return [4 /*yield*/, dependencyLibrary.addDependency(prereq, newTask)];
                 case 20:
-                    _c = 0, _d = newTaskDetails.dependents;
-                    _e.label = 21;
+                    _e.sent();
+                    return [4 /*yield*/, dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey)];
                 case 21:
-                    if (!(_c < _d.length)) return [3 /*break*/, 25];
-                    dep = _d[_c];
-                    return [4 /*yield*/, dependencyLibrary.addDependency(newTask, dep)];
+                    _e.sent();
+                    _e.label = 22;
                 case 22:
-                    _e.sent();
-                    return [4 /*yield*/, dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)];
+                    _i++;
+                    return [3 /*break*/, 19];
                 case 23:
-                    _e.sent();
+                    _c = 0, _d = newTaskDetails.dependents;
                     _e.label = 24;
                 case 24:
-                    _c++;
-                    return [3 /*break*/, 21];
+                    if (!(_c < _d.length)) return [3 /*break*/, 28];
+                    dep = _d[_c];
+                    return [4 /*yield*/, dependencyLibrary.addDependency(newTask, dep)];
                 case 25:
-                    if (!move) return [3 /*break*/, 28];
-                    return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
+                    _e.sent();
+                    return [4 /*yield*/, dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey)];
                 case 26:
+                    _e.sent();
+                    _e.label = 27;
+                case 27:
+                    _c++;
+                    return [3 /*break*/, 24];
+                case 28:
+                    if (!move) return [3 /*break*/, 31];
+                    return [4 /*yield*/, moveToActionGroupLibrary.projectPrompt()];
+                case 29:
                     proj = _e.sent();
                     return [4 /*yield*/, moveToActionGroupLibrary.actionGroupPrompt([newTask], proj)];
-                case 27:
+                case 30:
                     _e.sent();
-                    _e.label = 28;
-                case 28: return [2 /*return*/];
+                    _e.label = 31;
+                case 31: return [2 /*return*/];
             }
         });
     }); };

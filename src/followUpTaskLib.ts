@@ -82,6 +82,7 @@ interface FollowUpTaskLib extends PlugIn.Library {
 }
 
 interface DependencyLibrary extends PlugIn.Library {
+    getPrefTag?: (prefTag: string) => Promise<Tag>
     getDependents?: (task: Task) => Task[]
     getPrereqs?: (task: Task) => Task[]
     addDependency?: (prereq: Task, dep: Task) => Promise<void>
@@ -304,10 +305,12 @@ interface FuzzySearchLibrary extends PlugIn.Library {
                     newTaskDetails.prerequisites = []
                     newTaskDetails.dependents = []
                     break
-                // TODO: don't copy dependency tags
-
             }
+            // in all cases, remove dependent and prerequisite tags from the list of tags to copy
+            const prereqTag = await dependencyLibrary.getPrefTag('prerequisiteTag')
+            const depTag = await dependencyLibrary.getPrefTag('dependentTag')
 
+            newTaskDetails.tags = newTaskDetails.tags.filter(tag => ![prereqTag, depTag].includes(tag))
         }
 
         //=== EDIT TASK FORM ==========================================================
