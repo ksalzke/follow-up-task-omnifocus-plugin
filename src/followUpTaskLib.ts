@@ -1,3 +1,18 @@
+
+interface SyncedPref {
+    id: string
+    read: (key: string) => any
+    readNumber: (key: string) => number | null
+}
+
+declare var SyncedPref: {
+    new(id: string): SyncedPref
+}
+
+interface SyncedPrefLib extends PlugIn.Library {
+    SyncedPref?: typeof SyncedPref
+}
+
 interface AddTaskForm extends Form {
     values: {
         taskName?: string
@@ -55,6 +70,8 @@ type TaskDetails = {
 }
 
 interface FollowUpTaskLib extends PlugIn.Library {
+    loadSyncedPrefs?: () => SyncedPref
+    tagsToShow?: () => Tag[]
     emptyTask?: () => TaskDetails
     initialForm?: (task: Task) => AddTaskForm
     propertiesToTransferForm?: (hasPrereqs: boolean, hasDeps: boolean) => NewTaskDetailsForm
@@ -86,6 +103,30 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 (() => {
 
     const lib: FollowUpTaskLib = new PlugIn.Library(new Version('1.0'))
+
+    lib.loadSyncedPrefs = (): SyncedPref | null => {
+        const syncedPrefsPlugin = PlugIn.find('com.KaitlinSalzke.SyncedPrefLibrary', null)
+
+        if (syncedPrefsPlugin !== null) {
+            const syncedPrefLib: SyncedPrefLib = syncedPrefsPlugin.library('syncedPrefLibrary')
+            const SyncedPref: SyncedPref = new syncedPrefLib.SyncedPref('com.KaitlinSalzke.followUpTask')
+            return SyncedPref
+        } else {
+            const alert = new Alert(
+                'Synced Preferences Library Required',
+                'For the Follow Up Task plug-in to work correctly, the \'Synced Preferences for OmniFocus\' plug-in (https://github.com/ksalzke/synced-preferences-for-omnifocus) is also required and needs to be added to the plug-in folder separately. Either you do not currently have this plugin installed, or it is not installed correctly.'
+            )
+            alert.show(() => { })
+        }
+    }
+
+    lib.tagsToShow = (): Tag[] => {
+        const syncedPrefs = lib.loadSyncedPrefs()
+        const currentSetting = syncedPrefs.read('tagIDs')
+        if (currentSetting) {
+            return currentSetting.map((id: string) => Tag.byIdentifier(id))
+        } else return []
+    }
 
     lib.emptyTask = () => {
         return {
@@ -157,7 +198,11 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null)
         editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
-        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', flattenedTags, flattenedTags.map(t => t.name), startingDetails.tags), null)
+
+        const tagsToShow = [...startingDetails.tags, ...lib.tagsToShow()]
+        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null)
+
+
         return editForm
     }
 

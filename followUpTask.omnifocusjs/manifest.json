@@ -16,7 +16,11 @@
     {
       "identifier": "addFollowUp",
       "image": "plus.circle.fill"
-    }
+    },
+    { 
+      "identifier": "preferences",
+      "image": "gearshape.fill"
+     }
   ],
   "libraries": [
     { "identifier": "followUpTaskLib"}
