@@ -46,6 +46,7 @@ interface EditTaskForm extends Form {
         addPrereq?: boolean
         dependents?: Task[]
         addDep?: boolean
+        addTags?: boolean
     }
 
 }
@@ -98,6 +99,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
     searchForm?: (allItems: any, itemTitles: string[], firstSelected: any, matchingFunction: Function | null) => FuzzySearchForm
     allTasksFuzzySearchForm?: () => FuzzySearchForm
     remainingTasksFuzzySearchForm?: () => FuzzySearchForm
+    activeTagsFuzzySearchForm?: () => FuzzySearchForm
 }
 
 
@@ -200,9 +202,9 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
 
-        const tagsToShow = [...startingDetails.tags, ...lib.tagsToShow()]
+        const tagsToShow = [...startingDetails.tags, ...lib.tagsToShow()] // TODO: only show once if included in both
         editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null)
-
+        editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null)
 
         return editForm
     }
@@ -341,13 +343,32 @@ interface FuzzySearchLibrary extends PlugIn.Library {
             do {
                 depForm = fuzzySearchLib.remainingTasksFuzzySearchForm()
                 depForm.addField(new Form.Field.Checkbox('another', 'Add another dependent?', false), null)
-                // show form
                 await depForm.show('ADD DEPENDENT', 'Confirm')
 
                 // processing
                 const dep = depForm.values.menuItem
                 newTaskDetails.dependents.push(dep)
             } while (depForm.values.another)
+        }
+
+        //TODO: don't show if already included in the prerequisites/dependents?
+
+        //=== TAG FORM ================================================================
+        if (editForm.values.addTags) {
+            let tagForm: FuzzySearchForm
+            do {
+
+                const activeTags = flattenedTags.filter(tag => tag.active)
+                const activeTagNames = activeTags.map(t => newTaskDetails.tags.includes(t) ? `${t.name} [TAGGED]` : t.name)
+                tagForm = fuzzySearchLib.searchForm(activeTags, activeTagNames, null, null)
+
+                tagForm.addField(new Form.Field.Checkbox('another', 'Add another tag?', false), null)
+                await tagForm.show('ADD TAG', 'Confirm')
+
+                // processing
+                const tag = tagForm.values.menuItem
+                newTaskDetails.tags.push(tag)
+            } while (tagForm.values.another)
         }
 
         //=== CREATE TASK =============================================================
