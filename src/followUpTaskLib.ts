@@ -202,7 +202,8 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
 
-        const tagsToShow = [...startingDetails.tags, ...lib.tagsToShow()] // TODO: only show once if included in both
+        const combinedTags = [...startingDetails.tags, ...lib.tagsToShow()]
+        const tagsToShow = [...new Set(combinedTags)] // using Set to remove any duplicates
         editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null)
         editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null)
 
