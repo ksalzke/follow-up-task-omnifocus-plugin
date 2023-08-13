@@ -174,10 +174,17 @@
         move = editForm.values.move;
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm);
         //=== PREREQ/DEP FORMS ========================================================
+        const remainingTasks = flattenedTasks.filter(task => ![Task.Status.Completed, Task.Status.Dropped].includes(task.taskStatus)); //TODO: exclude current task
+        const remainingTaskLabels = remainingTasks.map(task => {
+            const taskPath = fuzzySearchLib.getTaskPath(task);
+            const prereqString = newTaskDetails.prerequisites.includes(task) ? ' [PREREQUISITE] ' : '';
+            const depString = newTaskDetails.dependents.includes(task) ? ' [DEPENDENT] ' : '';
+            return `${taskPath}${prereqString}${depString}`;
+        });
         if (editForm.values.addPrereq) {
             let prereqForm;
             do {
-                prereqForm = fuzzySearchLib.remainingTasksFuzzySearchForm();
+                prereqForm = fuzzySearchLib.searchForm(remainingTasks, remainingTaskLabels, null, null);
                 prereqForm.addField(new Form.Field.Checkbox('another', 'Add another prerequisite?', false), null);
                 // show form
                 await prereqForm.show('ADD PREREQUISITE', 'Confirm');
@@ -189,7 +196,7 @@
         if (editForm.values.addDep) {
             let depForm;
             do {
-                depForm = fuzzySearchLib.remainingTasksFuzzySearchForm();
+                depForm = fuzzySearchLib.searchForm(remainingTasks, remainingTaskLabels, null, null);
                 depForm.addField(new Form.Field.Checkbox('another', 'Add another dependent?', false), null);
                 await depForm.show('ADD DEPENDENT', 'Confirm');
                 // processing
@@ -197,7 +204,6 @@
                 newTaskDetails.dependents.push(dep);
             } while (depForm.values.another);
         }
-        //TODO: don't show if already included in the prerequisites/dependents?
         //=== TAG FORM ================================================================
         if (editForm.values.addTags) {
             let tagForm;
