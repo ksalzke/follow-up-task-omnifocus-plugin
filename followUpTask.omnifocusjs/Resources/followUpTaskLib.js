@@ -53,13 +53,18 @@
         };
         return form;
     };
-    lib.propertiesToTransferForm = (hasPrereqs, hasDeps) => {
+    lib.propertiesToTransferForm = (task, hasPrereqs, hasDeps) => {
         const newTaskForm = new Form();
-        newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null);
-        newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null);
+        if (task.tags.length > 0)
+            newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
+        if (task.flagged)
+            newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
+        if (task.deferDate !== null)
+            newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
+        if (task.dueDate !== null)
+            newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null);
+        if (task.note !== '')
+            newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null);
         if (hasPrereqs)
             newTaskForm.addField(new Form.Field.Checkbox('prerequisites', 'Prerequisites', false), null);
         if (hasDeps)
@@ -158,8 +163,9 @@
             //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
             switch (form.values.propertiesToTransfer) {
                 case 'select':
-                    const newTaskForm = lib.propertiesToTransferForm(prerequisites.length > 0, dependencies.length > 0);
-                    await newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm');
+                    const newTaskForm = lib.propertiesToTransferForm(task, prerequisites.length > 0, dependencies.length > 0);
+                    if (newTaskForm.fields.length > 0)
+                        await newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm'); // if length = 0, there are no properties to transfer so skip this dialogue
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : [];
                     newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false;
                     newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null;
