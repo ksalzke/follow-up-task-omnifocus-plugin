@@ -2,11 +2,11 @@
     const action = new PlugIn.Action(async function (selection, sender) {
         const lib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib');
         if (selection.tasks.length === 1) {
-            await lib.addFollowUpTask(selection.tasks[0]);
+            await lib.addFollowUpTask('COMPLETE & ADD FOLLOW-UP TASK', selection.tasks[0]);
             selection.tasks[0].markComplete();
         }
         else {
-            await lib.addFollowUpTask(null);
+            await lib.addFollowUpTask('ADD NEW TASK', null);
         }
     });
     action.validate = function (selection, sender) {

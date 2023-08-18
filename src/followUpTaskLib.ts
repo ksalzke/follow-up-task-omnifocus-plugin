@@ -80,7 +80,7 @@ interface FollowUpTaskLib extends PlugIn.Library {
     editForm?: (task: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails) => EditTaskForm
     getTaskDetailsFromEditForm?: (editForm: EditTaskForm) => TaskDetails
     createTask?: (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => Task
-    addFollowUpTask?: (task: Task) => Promise<void>
+    addFollowUpTask?: (formTitle: string, task: Task) => Promise<void>
 }
 
 interface DependencyLibrary extends PlugIn.Library {
@@ -270,7 +270,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         return newTask
     }
 
-    lib.addFollowUpTask = async (task: Task | null) => {
+    lib.addFollowUpTask = async (formTitle: string, task: Task | null) => {
 
         //=== SET-UP =================================================================
 
@@ -305,7 +305,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
             //=== INITIAL FORM ===========================================================
 
             const form = lib.initialForm(task)
-            await form.show(`ADD FOLLOW-UP TASK${dependencyString}${prereqString}`, 'Confirm')
+            await form.show(`${formTitle}${dependencyString}${prereqString}`, 'Confirm')
             newTaskDetails.name = form.values.taskName
 
             //=== 'PROPERTIES TO TRANSFER' FORM ==========================================

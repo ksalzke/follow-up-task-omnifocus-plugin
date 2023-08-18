@@ -134,7 +134,7 @@
         newTask.dueDate = taskDetails.dueDate;
         return newTask;
     };
-    lib.addFollowUpTask = async (task) => {
+    lib.addFollowUpTask = async (formTitle, task) => {
         //=== SET-UP =================================================================
         const dependencyPlugIn = PlugIn.find('com.KaitlinSalzke.DependencyForOmniFocus', null);
         const dependencyLibrary = dependencyPlugIn ? dependencyPlugIn.library('dependencyLibrary') : null;
@@ -158,7 +158,7 @@
         if (task) {
             //=== INITIAL FORM ===========================================================
             const form = lib.initialForm(task);
-            await form.show(`ADD FOLLOW-UP TASK${dependencyString}${prereqString}`, 'Confirm');
+            await form.show(`${formTitle}${dependencyString}${prereqString}`, 'Confirm');
             newTaskDetails.name = form.values.taskName;
             //=== 'PROPERTIES TO TRANSFER' FORM ==========================================
             switch (form.values.propertiesToTransfer) {

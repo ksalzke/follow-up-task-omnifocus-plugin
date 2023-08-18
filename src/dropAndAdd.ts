@@ -3,10 +3,10 @@
     const lib: FollowUpTaskLib = PlugIn.find('com.KaitlinSalzke.followUpTask', null).library('followUpTaskLib')
 
     if (selection.tasks.length === 1) {
-      await lib.addFollowUpTask(selection.tasks[0])
+      await lib.addFollowUpTask('DROP & ADD FOLLOW-UP TASK', selection.tasks[0])
       selection.tasks[0].drop(true)
     } else {
-      await lib.addFollowUpTask(null)
+      await lib.addFollowUpTask('ADD NEW TASK', null)
     }
 
   })
