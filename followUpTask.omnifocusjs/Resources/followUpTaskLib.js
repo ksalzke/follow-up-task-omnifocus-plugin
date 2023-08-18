@@ -46,21 +46,11 @@
         const form = new Form();
         form.addField(new Form.Field.String('taskName', 'New Task', null, null), null);
         form.addField(new Form.Field.Option('propertiesToTransfer', 'Properties To Transfer', ['all_exc_dependencies', 'all_inc_dependencies', 'select'], ['All except dependencies', 'All including dependencies', 'Select manually'], 'all_exc_dependencies', null), null);
-        if (moveToActionGroupPlugIn)
-            form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
-        // add validation so that 'Move' is not available if 'Select manually' is chosen
         form.validate = (form) => {
             if (!form.values.taskName || form.values.taskName === '')
                 return false; // can't proceed if no task name entered
-            const moveCheckboxShowing = form.fields.some(field => field.key === 'move');
-            // if 'select' is chosen and move checkbox is shown, hide it (and vice versa)
-            if (form.values.propertiesToTransfer === 'select' && moveCheckboxShowing) {
-                form.removeField(form.fields.find(field => field.key === 'move'));
-            }
-            if (form.values.propertiesToTransfer !== 'select' && !moveCheckboxShowing && moveToActionGroupPlugIn) {
-                form.addField(new Form.Field.Checkbox('move', 'Move?', false), null);
-            }
-            return true;
+            else
+                return true;
         };
         return form;
     };
@@ -77,7 +67,7 @@
             newTaskForm.addField(new Form.Field.Checkbox('dependents', 'Dependents', false), null);
         return newTaskForm;
     };
-    lib.editForm = (originalTask, originalPrereqs, originalDeps, startingDetails, move) => {
+    lib.editForm = (originalTask, originalPrereqs, originalDeps, startingDetails) => {
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
         const editForm = new Form();
         /* name */ editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null);
@@ -100,7 +90,7 @@
         const fuzzySearchLib = lib.getFuzzySearchLib();
         const taskPath = originalTask.parent ? fuzzySearchLib.getTaskPath(originalTask.parent) : 'inbox';
         if (moveToActionGroupPlugIn)
-            editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, move), null);
+            editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, false), null);
         return editForm;
     };
     lib.getTaskDetailsFromEditForm = (editForm) => {
@@ -144,7 +134,6 @@
             prerequisites: prerequisites,
             dependents: dependencies
         } : lib.emptyTask();
-        let move = false;
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
         const moveToActionGroupLibrary = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null;
         if (task) {
@@ -178,9 +167,9 @@
             newTaskDetails.tags = newTaskDetails.tags.filter(tag => ![prereqTag, depTag].includes(tag));
         }
         //=== EDIT TASK FORM ==========================================================
-        const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails, move);
+        const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails);
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm');
-        move = editForm.values.move;
+        const move = editForm.values.move;
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm);
         //=== PREREQ/DEP FORMS ========================================================
         const remainingTasks = flattenedTasks.filter(task => ![Task.Status.Completed, Task.Status.Dropped].includes(task.taskStatus)); //TODO: exclude current task

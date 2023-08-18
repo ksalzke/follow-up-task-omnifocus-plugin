@@ -77,7 +77,7 @@ interface FollowUpTaskLib extends PlugIn.Library {
     emptyTask?: () => TaskDetails
     initialForm?: (task: Task) => AddTaskForm
     propertiesToTransferForm?: (hasPrereqs: boolean, hasDeps: boolean) => NewTaskDetailsForm
-    editForm?: (task: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: Boolean) => EditTaskForm
+    editForm?: (task: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails) => EditTaskForm
     getTaskDetailsFromEditForm?: (editForm: EditTaskForm) => TaskDetails
     createTask?: (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => Task
     addFollowUpTask?: (task: Task) => Promise<void>
@@ -165,24 +165,10 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         form.addField(new Form.Field.String('taskName', 'New Task', null, null), null)
 
         form.addField(new Form.Field.Option('propertiesToTransfer', 'Properties To Transfer', ['all_exc_dependencies', 'all_inc_dependencies', 'select'], ['All except dependencies', 'All including dependencies', 'Select manually'], 'all_exc_dependencies', null), null)
-        if (moveToActionGroupPlugIn) form.addField(new Form.Field.Checkbox('move', 'Move?', false), null)
 
-        // add validation so that 'Move' is not available if 'Select manually' is chosen
         form.validate = (form: AddTaskForm) => {
             if (!form.values.taskName || form.values.taskName === '') return false // can't proceed if no task name entered
-
-            const moveCheckboxShowing = form.fields.some(field => field.key === 'move')
-
-            // if 'select' is chosen and move checkbox is shown, hide it (and vice versa)
-            if (form.values.propertiesToTransfer === 'select' && moveCheckboxShowing) {
-                form.removeField(form.fields.find(field => field.key === 'move'))
-            }
-
-            if (form.values.propertiesToTransfer !== 'select' && !moveCheckboxShowing && moveToActionGroupPlugIn) {
-                form.addField(new Form.Field.Checkbox('move', 'Move?', false), null)
-            }
-
-            return true
+            else return true
         }
 
         return form
@@ -201,7 +187,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         return newTaskForm
     }
 
-    lib.editForm = (originalTask: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: boolean) => {
+    lib.editForm = (originalTask: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails) => {
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
 
         const editForm: EditTaskForm = new Form()
@@ -232,7 +218,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
         const fuzzySearchLib = lib.getFuzzySearchLib()
         const taskPath = originalTask.parent ? fuzzySearchLib.getTaskPath(originalTask.parent) : 'inbox'
-        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, move), null)
+        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, false), null)
         return editForm
     }
 
@@ -292,8 +278,6 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         } : lib.emptyTask()
 
-        let move = false
-
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
         const moveToActionGroupLibrary: ActionGroupLib | null = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null
 
@@ -336,9 +320,9 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         //=== EDIT TASK FORM ==========================================================
 
-        const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails, move)
+        const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails)
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm')
-        move = editForm.values.move
+        const move = editForm.values.move
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)
 
         //=== PREREQ/DEP FORMS ========================================================
