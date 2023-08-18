@@ -72,11 +72,12 @@ type TaskDetails = {
 
 interface FollowUpTaskLib extends PlugIn.Library {
     loadSyncedPrefs?: () => SyncedPref
+    getFuzzySearchLib?: () => FuzzySearchLibrary
     tagsToShow?: () => Tag[]
     emptyTask?: () => TaskDetails
     initialForm?: (task: Task) => AddTaskForm
     propertiesToTransferForm?: (hasPrereqs: boolean, hasDeps: boolean) => NewTaskDetailsForm
-    editForm?: (originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: Boolean) => EditTaskForm
+    editForm?: (task: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: Boolean) => EditTaskForm
     getTaskDetailsFromEditForm?: (editForm: EditTaskForm) => TaskDetails
     createTask?: (taskDetails: TaskDetails, location: Task.ChildInsertionLocation) => Task
     addFollowUpTask?: (task: Task) => Promise<void>
@@ -122,6 +123,18 @@ interface FuzzySearchLibrary extends PlugIn.Library {
             )
             alert.show(() => { })
         }
+    }
+
+    lib.getFuzzySearchLib = (): FuzzySearchLibrary => {
+        const fuzzySearchPlugIn = PlugIn.find('com.KaitlinSalzke.fuzzySearchLib', null)
+        if (!fuzzySearchPlugIn) {
+            const alert = new Alert(
+                'Fuzzy Search Library Required',
+                'For the Follow-Up Task plug-in to work correctly, the \'Fuzzy Search\' plug-in (https://github.com/ksalzke/fuzzy-search-library) is also required and needs to be added to the plug-in folder separately. Either you do not currently have this plugin installed, or it is not installed correctly.'
+            )
+            alert.show(null)
+        }
+        return fuzzySearchPlugIn.library('fuzzySearchLib')
     }
 
     lib.tagsToShow = (): Tag[] => {
@@ -188,26 +201,38 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         return newTaskForm
     }
 
-    lib.editForm = (originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: boolean) => {
+    lib.editForm = (originalTask: Task | null, originalPrereqs: Task[], originalDeps: Task[], startingDetails: TaskDetails, move: boolean) => {
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
 
         const editForm: EditTaskForm = new Form()
-        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', 'Move?', move), null)
-        editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null)
-        editForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', startingDetails.flagged), null)
-        editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null)
-        editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null)
-        editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null)
-        editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(t => t.name), startingDetails.prerequisites), null)
-        editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null)
-        editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
-        editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
 
+        /* name */ editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null)
+
+        /* tags */
         const combinedTags = [...startingDetails.tags, ...lib.tagsToShow()]
         const tagsToShow = [...new Set(combinedTags)] // using Set to remove any duplicates
         editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null)
-        editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null)
 
+        /* defer date */ editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null)
+
+        /* due date */ editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null)
+
+        /* notes */ editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null)
+
+        /* prerequisites */ if (originalPrereqs.length > 0) editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(t => t.name), startingDetails.prerequisites), null)
+
+        /* dependents */ if (originalDeps.length > 0) editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null)
+
+        /* flag */ editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null)
+
+        // fields that generate subsequent dialogues
+
+        editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null)
+        editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null)
+        editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null)
+        const fuzzySearchLib = lib.getFuzzySearchLib()
+        const taskPath = originalTask.parent ? fuzzySearchLib.getTaskPath(originalTask.parent) : 'inbox'
+        if (moveToActionGroupPlugIn) editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, move), null)
         return editForm
     }
 
@@ -253,15 +278,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         const prerequisites: Task[] = (dependencyLibrary && task) ? dependencyLibrary.getPrereqs(task) : []
         const prereqString = prerequisites.length > 0 ? `\n\nPrerequisite: \n - ${prerequisites.map(task => task.name).join('\n - ')}` : ''
 
-        const fuzzySearchPlugIn = PlugIn.find('com.KaitlinSalzke.fuzzySearchLib', null)
-        if (!fuzzySearchPlugIn) {
-            const alert = new Alert(
-                'Fuzzy Search Library Required',
-                'For the Follow-Up Task plug-in to work correctly, the \'Fuzzy Search\' plug-in (https://github.com/ksalzke/fuzzy-search-library) is also required and needs to be added to the plug-in folder separately. Either you do not currently have this plugin installed, or it is not installed correctly.'
-            )
-            alert.show(null)
-        }
-        const fuzzySearchLib: FuzzySearchLibrary = fuzzySearchPlugIn.library('fuzzySearchLib')
+        const fuzzySearchLib: FuzzySearchLibrary = lib.getFuzzySearchLib()
 
         let newTaskDetails: TaskDetails = task ? {
             name: task.name,
@@ -319,7 +336,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         //=== EDIT TASK FORM ==========================================================
 
-        const editForm = lib.editForm(prerequisites, dependencies, newTaskDetails, move)
+        const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails, move)
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm')
         move = editForm.values.move
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)
