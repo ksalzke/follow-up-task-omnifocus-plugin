@@ -42,7 +42,6 @@
         };
     };
     lib.initialForm = (task) => {
-        const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
         const form = new Form();
         form.addField(new Form.Field.String('taskName', 'New Task', null, null), null);
         form.addField(new Form.Field.Option('propertiesToTransfer', 'Properties To Transfer', ['all_exc_dependencies', 'all_inc_dependencies', 'select'], ['All except dependencies', 'All including dependencies', 'Select manually'], 'all_exc_dependencies', null), null);
@@ -72,32 +71,47 @@
         const editForm = new Form();
         /* name */ editForm.addField(new Form.Field.String('name', 'Name', startingDetails.name, null), null);
         /* tags */
-        const combinedTags = [...startingDetails.tags, ...lib.tagsToShow()];
-        const tagsToShow = [...new Set(combinedTags)]; // using Set to remove any duplicates
-        editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null);
-        /* defer date */ editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null);
-        /* due date */ editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null);
+        if (originalTask) {
+            const combinedTags = [...startingDetails.tags, ...lib.tagsToShow()];
+            const tagsToShow = [...new Set(combinedTags)]; // using Set to remove any duplicates
+            editForm.addField(new Form.Field.MultipleOptions('tags', 'Tags', tagsToShow, tagsToShow.map(t => t.name), startingDetails.tags), null);
+        }
+        /* defer date */
+        if (originalTask) {
+            editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null);
+        }
+        /* due date */
+        if (originalTask) {
+            editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null);
+        }
         /* notes */ editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null);
-        /* prerequisites */ if (originalPrereqs.length > 0)
+        /* prerequisites */
+        if (originalPrereqs.length > 0) {
             editForm.addField(new Form.Field.MultipleOptions('prerequisites', 'Prerequisites', originalPrereqs, originalPrereqs.map(t => t.name), startingDetails.prerequisites), null);
-        /* dependents */ if (originalDeps.length > 0)
+        }
+        /* dependents */
+        if (originalDeps.length > 0) {
             editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null);
+        }
         /* flag */ editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null);
         // fields that generate subsequent dialogues
-        editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null);
+        if (originalTask) {
+            editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null);
+        }
         editForm.addField(new Form.Field.Checkbox('addPrereq', 'Add prerequisite', false), null);
         editForm.addField(new Form.Field.Checkbox('addDep', 'Add dependent', false), null);
-        const fuzzySearchLib = lib.getFuzzySearchLib();
-        const taskPath = originalTask.parent ? fuzzySearchLib.getTaskPath(originalTask.parent) : 'inbox';
-        if (moveToActionGroupPlugIn)
+        if (originalTask && moveToActionGroupPlugIn) {
+            const fuzzySearchLib = lib.getFuzzySearchLib();
+            const taskPath = originalTask.parent ? fuzzySearchLib.getTaskPath(originalTask.parent) : 'inbox';
             editForm.addField(new Form.Field.Checkbox('move', `Move? (Current location: ${taskPath})`, false), null);
+        }
         return editForm;
     };
     lib.getTaskDetailsFromEditForm = (editForm) => {
         return {
             name: editForm.values.name,
             note: editForm.values.notes,
-            tags: editForm.values.tags,
+            tags: editForm.values.tags || [],
             flagged: editForm.values.flagged,
             deferDate: editForm.values.deferDate,
             dueDate: editForm.values.dueDate,
@@ -169,7 +183,7 @@
         //=== EDIT TASK FORM ==========================================================
         const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails);
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm');
-        const move = editForm.values.move;
+        const move = editForm.values.move == null ? true : editForm.values.move; // if null, move checkbox wasn't on form and should be moved by default (for a new task)
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm);
         //=== PREREQ/DEP FORMS ========================================================
         const remainingTasks = flattenedTasks.filter(task => ![Task.Status.Completed, Task.Status.Dropped].includes(task.taskStatus)); //TODO: exclude current task
@@ -203,7 +217,7 @@
             } while (depForm.values.another);
         }
         //=== TAG FORM ================================================================
-        if (editForm.values.addTags) {
+        if (editForm.values.addTags === true) {
             let tagForm;
             do {
                 const activeTags = flattenedTags.filter(tag => tag.active);
@@ -230,7 +244,7 @@
             await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey);
         }
         // move the task if specified
-        if (move) {
+        if (move !== false) { // move is either null (form not shown) or true (selected)
             const proj = await moveToActionGroupLibrary.projectPrompt();
             await moveToActionGroupLibrary.actionGroupPrompt([newTask], proj);
         }
