@@ -13,7 +13,7 @@ interface PrefForm extends Form {
         const syncedPrefs = lib.loadSyncedPrefs()
 
         // get current preferences or set defaults if they don't yet exist
-        const tagsToShow: Tag[] = lib.followUpTags()
+        const tagsToShow: Tag[] = lib.tagsToShow()
 
         // create and show form
         const prefForm: PrefForm = new Form()
