@@ -35,6 +35,7 @@
             note: '',
             tags: [],
             flagged: false,
+            todayTag: false,
             deferDate: null,
             dueDate: null,
             prerequisites: [],
@@ -59,6 +60,8 @@
             newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null);
         if (task.flagged)
             newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null);
+        if (task.tags.includes(Tag.forecastTag))
+            newTaskForm.addField(new Form.Field.Checkbox('todayTag', 'Today Tag', true), null);
         if (task.deferDate !== null)
             newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null);
         if (task.dueDate !== null)
@@ -99,6 +102,10 @@
             editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null);
         }
         /* flag */ editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null);
+        /* today tag */
+        if (Tag.forecastTag !== null) {
+            editForm.addField(new Form.Field.Checkbox('todayTag', 'Add Today Tag', startingDetails.todayTag), null);
+        }
         // fields that generate subsequent dialogues
         if (originalTask) {
             editForm.addField(new Form.Field.Checkbox('addTags', 'Add another tag(s)', false), null);
@@ -118,6 +125,7 @@
             note: editForm.values.notes,
             tags: editForm.values.tags || [],
             flagged: editForm.values.flagged,
+            todayTag: editForm.values.todayTag,
             deferDate: editForm.values.deferDate,
             dueDate: editForm.values.dueDate,
             prerequisites: editForm.values.prerequisites || [],
@@ -129,6 +137,8 @@
         newTask.clearTags(); // stops any tags being inherited inadvertantly
         newTask.note = taskDetails.note;
         newTask.addTags(taskDetails.tags);
+        if (taskDetails.todayTag)
+            newTask.addTag(Tag.forecastTag);
         newTask.flagged = taskDetails.flagged;
         newTask.deferDate = taskDetails.deferDate;
         newTask.dueDate = taskDetails.dueDate;
@@ -146,8 +156,9 @@
         let newTaskDetails = task ? {
             name: task.name,
             note: task.note,
-            tags: task.tags,
+            tags: task.tags.filter(tag => tag !== Tag.forecastTag),
             flagged: task.flagged,
+            todayTag: task.tags.includes(Tag.forecastTag),
             deferDate: task.deferDate,
             dueDate: task.dueDate,
             prerequisites: prerequisites,
@@ -168,6 +179,7 @@
                         await newTaskForm.show('PROPERTIES FOR TRANSFER', 'Confirm'); // if length = 0, there are no properties to transfer so skip this dialogue
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : [];
                     newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false;
+                    newTaskDetails.todayTag = newTaskForm.values.todayTag ? task.tags.includes(Tag.forecastTag) : false;
                     newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null;
                     newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null;
                     newTaskDetails.note = newTaskForm.values.notes ? task.note : null;

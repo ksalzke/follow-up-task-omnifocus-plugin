@@ -25,6 +25,7 @@ interface NewTaskDetailsForm extends Form {
     values: {
         tags?: boolean
         flagged?: boolean
+        todayTag?: boolean
         deferDate?: boolean
         dueDate?: boolean
         notes?: boolean
@@ -39,6 +40,7 @@ interface EditTaskForm extends Form {
         move?: boolean
         tags?: Tag[]
         flagged?: boolean
+        todayTag?: boolean
         deferDate?: Date
         dueDate?: Date
         notes?: string
@@ -64,6 +66,7 @@ type TaskDetails = {
     note: string
     tags: Tag[]
     flagged: boolean
+    todayTag: boolean
     deferDate: Date
     dueDate: Date
     prerequisites: Task[]
@@ -151,6 +154,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
             note: '',
             tags: [],
             flagged: false,
+            todayTag: false,
             deferDate: null,
             dueDate: null,
             prerequisites: [],
@@ -178,6 +182,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         const newTaskForm: NewTaskDetailsForm = new Form()
         if (task.tags.length > 0) newTaskForm.addField(new Form.Field.Checkbox('tags', 'Tags', false), null)
         if (task.flagged) newTaskForm.addField(new Form.Field.Checkbox('flagged', 'Flagged', false), null)
+        if (task.tags.includes(Tag.forecastTag)) newTaskForm.addField(new Form.Field.Checkbox('todayTag', 'Today Tag', true), null)
         if (task.deferDate !== null) newTaskForm.addField(new Form.Field.Checkbox('deferDate', 'Defer Date', false), null)
         if (task.dueDate !== null) newTaskForm.addField(new Form.Field.Checkbox('dueDate', 'Due Date', false), null)
         if (task.note !== '') newTaskForm.addField(new Form.Field.Checkbox('notes', 'Notes', false), null)
@@ -224,6 +229,11 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         /* flag */ editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null)
 
+        /* today tag */
+        if (Tag.forecastTag !== null) {
+            editForm.addField(new Form.Field.Checkbox('todayTag', 'Add Today Tag', startingDetails.todayTag), null)
+        }
+
         // fields that generate subsequent dialogues
 
         if (originalTask) {
@@ -247,6 +257,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
             note: editForm.values.notes,
             tags: editForm.values.tags || [],
             flagged: editForm.values.flagged,
+            todayTag: editForm.values.todayTag,
             deferDate: editForm.values.deferDate,
             dueDate: editForm.values.dueDate,
             prerequisites: editForm.values.prerequisites || [],
@@ -261,11 +272,10 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         newTask.note = taskDetails.note
         newTask.addTags(taskDetails.tags)
+        if (taskDetails.todayTag) newTask.addTag(Tag.forecastTag)
         newTask.flagged = taskDetails.flagged
         newTask.deferDate = taskDetails.deferDate
         newTask.dueDate = taskDetails.dueDate
-
-
 
         return newTask
     }
@@ -288,8 +298,9 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         let newTaskDetails: TaskDetails = task ? {
             name: task.name,
             note: task.note,
-            tags: task.tags,
+            tags: task.tags.filter(tag => tag !== Tag.forecastTag),
             flagged: task.flagged,
+            todayTag: task.tags.includes(Tag.forecastTag),
             deferDate: task.deferDate,
             dueDate: task.dueDate,
             prerequisites: prerequisites,
@@ -317,6 +328,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
                     newTaskDetails.tags = newTaskForm.values.tags ? task.tags : []
                     newTaskDetails.flagged = newTaskForm.values.flagged ? task.flagged : false
+                    newTaskDetails.todayTag = newTaskForm.values.todayTag ? task.tags.includes(Tag.forecastTag) : false
                     newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null
                     newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null
                     newTaskDetails.note = newTaskForm.values.notes ? task.note : null
