@@ -1,4 +1,25 @@
-# 1.1.0 (2023-08-13)
+# [1.2.0](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.1.0...v1.2.0) (2023-08-18)
+
+
+### Bug Fixes
+
+* :bug: fix preference pane not showing - issue [#2](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/issues/2) ([d3d81af](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/d3d81af0976e0b42ec2cda950aa4412b372132cd))
+* :bug: show plug-in name in menu (closes [#2](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/issues/2)) ([d2a2d4f](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/d2a2d4ffeeb3b5a11c42682470bdce4d6d2e26cf))
+
+
+### Features
+
+* :lipstick: label existing prereq/dep tasks in dropdown ([613cd0e](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/613cd0e99e6f3f695658adbf54678c9ae403efbc))
+* :lipstick: remove 'move checkbox' from first dialogue ([7983801](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/7983801ffce826547a0888a8b51323d952dfc5b1))
+* :lipstick: update first dialogue header to reflect action ([01c6953](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/01c6953a9a4252aafa903dc3b1553056129db02b))
+* :sparkles: add 'today tag' option ([e502d0b](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/e502d0b3fb889e900414e2d4b088d3a312b33eac))
+* :sparkles: only show properties in transfer dialogue that are not null in original task ([cc3591e](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/cc3591e688ded93d78e110cf537fe0d86f269899))
+* :sparkles: show project/action group path in dialogue (and change order) ([61a3c91](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/61a3c919edede2a68afeaa05e1ab45746651e85f))
+* :sparkles: show reduced edit form if no task selected (and auto-move) ([cc54bd7](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/cc54bd74cf377d89bd3b7bc398a2f1dc0a5846ba))
+
+
+
+# [1.1.0](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/631ce47df0994980dec2187c70501d309203a514...v1.1.0) (2023-08-13)
 
 
 ### Bug Fixes
