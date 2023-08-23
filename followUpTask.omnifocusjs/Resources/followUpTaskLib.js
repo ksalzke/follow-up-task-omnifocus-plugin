@@ -101,7 +101,10 @@
         if (originalDeps.length > 0) {
             editForm.addField(new Form.Field.MultipleOptions('dependents', 'Dependents', originalDeps, originalDeps.map(t => t.name), startingDetails.dependents), null);
         }
-        /* flag */ editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null);
+        /* flag */
+        if (originalTask) {
+            editForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', startingDetails.flagged), null);
+        }
         /* today tag */
         if (Tag.forecastTag !== null) {
             editForm.addField(new Form.Field.Checkbox('todayTag', 'Add Today Tag', startingDetails.todayTag), null);
@@ -242,10 +245,13 @@
                 const activeTagNames = activeTags.map(t => newTaskDetails.tags.includes(t) ? `${t.name} [TAGGED]` : t.name);
                 tagForm = fuzzySearchLib.searchForm(activeTags, activeTagNames, null, null);
                 tagForm.addField(new Form.Field.Checkbox('another', 'Add another tag?', false), null);
+                if (!task)
+                    tagForm.addField(new Form.Field.Checkbox('flagged', 'Set Flag', newTaskDetails.flagged), null);
                 await tagForm.show('ADD TAG', 'Confirm');
                 // processing
                 const tag = tagForm.values.menuItem;
                 newTaskDetails.tags.push(tag);
+                newTaskDetails.flagged = tagForm.values.flagged;
             } while (tagForm.values.another);
         }
         //=== CREATE TASK =============================================================
