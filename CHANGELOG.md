@@ -1,3 +1,13 @@
+# [1.3.0](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.2.0...v1.3.0) (2023-08-23)
+
+
+### Features
+
+* :sparkles: add tag dialogue for new task ([da00e6e](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/da00e6ed24767894c66939ec619f0dbe0d2856fe))
+* :sparkles: move 'flag' option to tag dialogue when creating a new task ([c157755](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/c1577556148b8b62c6de0c0659e5ca14b5805aa0))
+
+
+
 # [1.2.0](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.1.0...v1.2.0) (2023-08-18)
 
 
