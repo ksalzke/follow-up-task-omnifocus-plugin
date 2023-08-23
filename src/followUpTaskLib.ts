@@ -394,7 +394,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         }
 
         //=== TAG FORM ================================================================
-        if (editForm.values.addTags === true) {
+        if (editForm.values.addTags === true || !task) {
             let tagForm: FuzzySearchForm
             do {
 

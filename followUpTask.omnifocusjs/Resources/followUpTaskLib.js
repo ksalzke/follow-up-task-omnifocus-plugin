@@ -235,7 +235,7 @@
             } while (depForm.values.another);
         }
         //=== TAG FORM ================================================================
-        if (editForm.values.addTags === true) {
+        if (editForm.values.addTags === true || !task) {
             let tagForm;
             do {
                 const activeTags = flattenedTags.filter(tag => tag.active);
