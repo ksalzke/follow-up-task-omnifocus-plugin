@@ -1,3 +1,14 @@
+## [1.3.1](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.3.0...v1.3.1) (2023-08-25)
+
+
+### Bug Fixes
+
+* :bug: fix bug where 'note' is not shown in edit dialogue and created task does not finish processing ([e9df726](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/e9df726e773ae5877c59cae8cabeb94e32890af7))
+* :bug: fix bug where 'tag' dialogue didn't finish processing when copying from an existing task ([00d4034](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/00d4034494d91a498c596ccacf8715bd76f99653))
+* :bug: fix bug where new task with prereq/dep not processed correctly ([a574429](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/a574429f3c4049db1565ba26ee0938a825d45720))
+
+
+
 # [1.3.0](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.2.0...v1.3.0) (2023-08-23)
 
 
