@@ -357,7 +357,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         const editForm = lib.editForm(task, prerequisites, dependencies, newTaskDetails)
         await editForm.show('EDIT NEW TASK DETAILS', 'Confirm')
-        const move = editForm.values.move == null ? true : editForm.values.move // if null, move checkbox wasn't on form and should be moved by default (for a new task)
+        const move = editForm.values.move === null ? true : editForm.values.move // if null, move checkbox wasn't on form and should be moved by default (for a new task)
         newTaskDetails = lib.getTaskDetailsFromEditForm(editForm)
 
         //=== PREREQ/DEP FORMS ========================================================
@@ -413,7 +413,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
                 // processing
                 const tag = tagForm.values.menuItem
                 newTaskDetails.tags.push(tag)
-                newTaskDetails.flagged = tagForm.values.flagged
+                newTaskDetails.flagged = tagForm.values.flagged ? tagForm.values.flagged : newTaskDetails.flagged
             } while (tagForm.values.another)
         }
 
