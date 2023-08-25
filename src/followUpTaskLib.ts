@@ -335,7 +335,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
                     newTaskDetails.todayTag = newTaskForm.values.todayTag ? task.tags.includes(Tag.forecastTag) : false
                     newTaskDetails.deferDate = newTaskForm.values.deferDate ? task.deferDate : null
                     newTaskDetails.dueDate = newTaskForm.values.dueDate ? task.dueDate : null
-                    newTaskDetails.note = newTaskForm.values.notes ? task.note : null
+                    newTaskDetails.note = newTaskForm.values.notes ? task.note : ''
                     newTaskDetails.prerequisites = newTaskForm.values.prerequisites ? prerequisites : []
                     newTaskDetails.dependents = newTaskForm.values.dependents ? dependencies : []
                     break;
