@@ -251,7 +251,7 @@
                 // processing
                 const tag = tagForm.values.menuItem;
                 newTaskDetails.tags.push(tag);
-                newTaskDetails.flagged = tagForm.values.flagged ? tagForm.values.flagged : newTaskDetails.flagged;
+                newTaskDetails.flagged = (tagForm.values.flagged !== undefined) ? tagForm.values.flagged : newTaskDetails.flagged;
             } while (tagForm.values.another);
         }
         //=== CREATE TASK =============================================================
@@ -261,11 +261,13 @@
         // update dependencies
         for (const prereq of newTaskDetails.prerequisites) {
             await dependencyLibrary.addDependency(prereq, newTask);
-            await dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey);
+            if (task)
+                await dependencyLibrary.removeDependency(prereq.id.primaryKey, task.id.primaryKey);
         }
         for (const dep of newTaskDetails.dependents) {
             await dependencyLibrary.addDependency(newTask, dep);
-            await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey);
+            if (task)
+                await dependencyLibrary.removeDependency(task.id.primaryKey, dep.id.primaryKey);
         }
         // move the task if specified
         if (move !== false) { // move is either null (form not shown) or true (selected)
