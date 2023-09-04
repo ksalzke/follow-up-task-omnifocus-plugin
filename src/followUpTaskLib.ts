@@ -96,8 +96,8 @@ interface DependencyLibrary extends PlugIn.Library {
 }
 
 interface ActionGroupLib extends PlugIn.Library {
-    projectPrompt?: () => Promise<Project>
-    actionGroupPrompt?: (tasks: Task[], proj: Project) => Promise<void>
+    processTasks?: (tasks: Task[], promptForProject: boolean, promptForFolder: boolean) => Promise<void>
+    // others not specified here as unused
 }
 
 interface FuzzySearchLibrary extends PlugIn.Library {
@@ -208,11 +208,13 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         /* defer date */
         if (originalTask) {
+            /* @ts-ignore */
             editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null)
         }
 
         /* due date */
         if (originalTask) {
+            /* @ts-ignore */
             editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null)
         }
 
@@ -313,6 +315,13 @@ interface FuzzySearchLibrary extends PlugIn.Library {
         } : lib.emptyTask()
 
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null)
+
+        if (moveToActionGroupPlugIn && moveToActionGroupPlugIn.version.isBefore(new Version('4.0.0'))) {
+            const alert = new Alert('Update Required: Move To Action Group Plug-In', 'The Move To Action Group plug-in needs to be updated for the Follow-Up Task plug-in to work correctly. Please update the plug-in to the latest version and try again.')
+            alert.show(null)
+            return
+        }
+
         const moveToActionGroupLibrary: ActionGroupLib | null = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null
 
         if (task) {
@@ -436,8 +445,7 @@ interface FuzzySearchLibrary extends PlugIn.Library {
 
         // move the task if specified
         if (move !== false) { // move is either null (form not shown) or true (selected)
-            const proj = await moveToActionGroupLibrary.projectPrompt()
-            await moveToActionGroupLibrary.actionGroupPrompt([newTask], proj)
+            moveToActionGroupLibrary.processTasks([newTask], true, false)
         }
     }
 

@@ -86,10 +86,12 @@
         }
         /* defer date */
         if (originalTask) {
+            /* @ts-ignore */
             editForm.addField(new Form.Field.Date('deferDate', 'Defer Date', startingDetails.deferDate, null), null);
         }
         /* due date */
         if (originalTask) {
+            /* @ts-ignore */
             editForm.addField(new Form.Field.Date('dueDate', 'Due Date', startingDetails.dueDate, null), null);
         }
         /* notes */ editForm.addField(new Form.Field.String('notes', 'Notes', startingDetails.note, null), null);
@@ -168,6 +170,11 @@
             dependents: dependencies
         } : lib.emptyTask();
         const moveToActionGroupPlugIn = PlugIn.find('com.KaitlinSalzke.MoveToActionGroup', null);
+        if (moveToActionGroupPlugIn && moveToActionGroupPlugIn.version.isBefore(new Version('4.0.0'))) {
+            const alert = new Alert('Update Required: Move To Action Group Plug-In', 'The Move To Action Group plug-in needs to be updated for the Follow-Up Task plug-in to work correctly. Please update the plug-in to the latest version and try again.');
+            alert.show(null);
+            return;
+        }
         const moveToActionGroupLibrary = moveToActionGroupPlugIn ? moveToActionGroupPlugIn.library('moveToActionGroupLib') : null;
         if (task) {
             //=== INITIAL FORM ===========================================================
@@ -271,8 +278,7 @@
         }
         // move the task if specified
         if (move !== false) { // move is either null (form not shown) or true (selected)
-            const proj = await moveToActionGroupLibrary.projectPrompt();
-            await moveToActionGroupLibrary.actionGroupPrompt([newTask], proj);
+            moveToActionGroupLibrary.processTasks([newTask], true, false);
         }
     };
     return lib;
