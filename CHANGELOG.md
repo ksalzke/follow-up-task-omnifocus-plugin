@@ -1,3 +1,12 @@
+## [1.3.2](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.3.1...v1.3.2) (2023-09-04)
+
+
+### Bug Fixes
+
+* :bug: update move action to use revised function in 'move to action group' lib - and prompt if the minimum version of that library is not installed ([a211501](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/commit/a211501b97e7e6ba5309c8ed2da9a69aa2a5d22e))
+
+
+
 ## [1.3.1](https://github.com/ksalzke/follow-up-task-omnifocus-plugin/compare/v1.3.0...v1.3.1) (2023-08-25)
 
 
